@@ -16,14 +16,14 @@
 		<ListPreference
 			android:title="@string/settings.keep_played_count_title"
 			android:key="keepPlayedCount"
-			android:defaultValue="0"
+			android:defaultValue="2"
 			android:entryValues="@array/keepPlayedCountValues"
 			android:entries="@array/keepPlayedCountNames"/>
 
 		<ListPreference
 			android:title="@string/settings.temp_loss_title"
 			android:key="tempLoss"
-			android:defaultValue="1"
+			android:defaultValue="0"
 			android:entryValues="@array/tempLossValues"
 			android:entries="@array/tempLossNames"/>
 
@@ -38,7 +38,7 @@
 			android:title="@string/settings.persistent_title"
 			android:summary="@string/settings.persistent_summary"
 			android:key="persistentNotification"
-			android:defaultValue="false"/>
+			android:defaultValue="true"/>
 
 		<CheckBoxPreference
 			android:title="@string/settings.heads_up_notification"
@@ -63,7 +63,7 @@
         <github.daneren2005.dsub.view.SeekBarPreference
             android:title="@string/settings.fastforward_interval"
             android:key="fastforwardInterval"
-            android:defaultValue="30"
+            android:defaultValue="10"
             android:dialogLayout="@layout/seekbar_preference"
             myns:max="60"/>
 	</PreferenceCategory>

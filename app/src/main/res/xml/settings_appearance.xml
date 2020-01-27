@@ -9,7 +9,7 @@
 		<ListPreference
 			android:title="@string/settings.theme_title"
 			android:key="theme"
-			android:defaultValue="light"
+			android:defaultValue="black"
 			android:entryValues="@array/themeValues"
 			android:entries="@array/themeNames"/>
 
@@ -57,7 +57,7 @@
 			android:title="@string/settings.disable_exit_prompt"
 			android:summary="@string/settings.disable_exit_prompt_summary"
 			android:key="disableExitPrompt"
-			android:defaultValue="false"/>
+			android:defaultValue="true"/>
 
 		<CheckBoxPreference
 			android:title="@string/settings.override_system_language"
@@ -91,7 +91,7 @@
 			android:title="@string/common.play_next"
 			android:summary="@string/settings.menu_options.play_next_summary"
 			android:key="showPlayNext"
-			android:defaultValue="false"/>
+			android:defaultValue="true"/>
 
 		<CheckBoxPreference
 			android:title="@string/common.play_last"
@@ -103,19 +103,19 @@
 			android:title="@string/common.download"
 			android:summary="@string/settings.menu_options.download_summary"
 			android:key="showDownload"
-			android:defaultValue="false"/>
+			android:defaultValue="true"/>
 
 		<CheckBoxPreference
 			android:title="@string/common.pin"
 			android:summary="@string/settings.menu_options.pin_summary"
 			android:key="showPin"
-			android:defaultValue="false"/>
+			android:defaultValue="true"/>
 
 		<CheckBoxPreference
 			android:title="@string/common.delete"
 			android:summary="@string/settings.menu_options.delete_summary"
 			android:key="showDelete"
-			android:defaultValue="false"/>
+			android:defaultValue="true"/>
 
 		<CheckBoxPreference
 			android:title="@string/common.star"
