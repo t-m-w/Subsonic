@@ -14,3 +14,10 @@ proguard_logs/
 /build/
 local.properties
 *Thumbs.db
+
+# added by tw
+/Subsonic.iml
+/app/floss/
+/app/google/
+/ServerProxy/
+/.directory
