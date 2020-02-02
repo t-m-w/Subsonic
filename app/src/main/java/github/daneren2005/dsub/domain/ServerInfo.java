@@ -141,6 +141,15 @@ public class ServerInfo implements Serializable {
 	public static boolean checkServerVersion(Context context, String requiredVersion) {
 		return checkServerVersion(context, requiredVersion, Util.getActiveServer(context));
 	}
+	public static boolean checkServerVersion(Context context, String requiredVersion, boolean evenOffline) {
+		int server = 0;
+		if (evenOffline && Util.isOffline(context)) {
+			server = Util.getMostRecentActiveServer(context);
+		} else {
+			server = Util.getActiveServer(context);
+		}
+		return checkServerVersion(context, requiredVersion, server);
+	}
 	public static boolean checkServerVersion(Context context, String requiredVersion, int instance) {
 		ServerInfo server = getServerInfo(context, instance);
 		if(server == null) {
@@ -214,7 +223,7 @@ public class ServerInfo implements Serializable {
 	}
 	
 	public static boolean canBookmark(Context context) {
-		return checkServerVersion(context, "1.9");
+		return checkServerVersion(context, "1.9", true);
 	}
 	public static boolean canInternetRadio(Context context) {
 		return checkServerVersion(context, "1.9");
