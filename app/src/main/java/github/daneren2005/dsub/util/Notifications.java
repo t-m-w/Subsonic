@@ -197,12 +197,13 @@ public final class Notifications {
 					rv.setImageViewResource(R.id.control_next, R.drawable.notification_forward);
 				}
 			} else {
-				rv.setImageViewResource(R.id.control_previous, playing ? R.drawable.notification_pause : R.drawable.notification_start);
 				if(shouldFastForward) {
-					rv.setImageViewResource(R.id.control_pause, R.drawable.notification_fastforward);
+					rv.setImageViewResource(R.id.control_previous, R.drawable.notification_rewind);
 				} else {
-					rv.setImageViewResource(R.id.control_pause, R.drawable.notification_forward);
+					rv.setImageViewResource(R.id.control_previous, R.drawable.notification_backward);
 				}
+				rv.setImageViewResource(R.id.control_pause, playing ? R.drawable.notification_pause : R.drawable.notification_start);
+
 				rv.setImageViewResource(R.id.control_next, R.drawable.notification_close);
 			}
 		} else if(shouldFastForward) {
@@ -233,11 +234,11 @@ public final class Notifications {
 			}
 		} else {
 			if (persistent) {
-				pause = R.id.control_previous;
+				pause = R.id.control_pause;
 				if(shouldFastForward) {
-					fastForward = R.id.control_pause;
+					rewind = R.id.control_previous;
 				} else {
-					next = R.id.control_pause;
+					previous = R.id.control_previous;
 				}
 				close = R.id.control_next;
 			} else {
