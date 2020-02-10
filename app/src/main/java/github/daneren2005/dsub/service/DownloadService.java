@@ -294,7 +294,7 @@ public class DownloadService extends Service {
 		lifecycleSupport.onCreate();
 
 		if(Build.VERSION.SDK_INT >= 26) {
-			Notifications.shutGoogleUpNotification(this);
+			Notifications.shutGoogleUpNotification(this, handler);
 		}
 	}
 

@@ -450,7 +450,7 @@ public final class Notifications {
 	}
 
 	@TargetApi(Build.VERSION_CODES.O)
-	public static void shutGoogleUpNotification(final DownloadService downloadService) {
+	public static void shutGoogleUpNotification(final DownloadService downloadService, Handler handler) {
 		// On Android O+, service crashes if startForeground isn't called within 5 seconds of starting
 		getDownloadingNotificationChannel(downloadService);
 
@@ -459,11 +459,16 @@ public final class Notifications {
 				.setSmallIcon(android.R.drawable.stat_sys_download)
 				.setContentTitle(downloadService.getResources().getString(R.string.download_downloading_title, 0))
 				.setContentText(downloadService.getResources().getString(R.string.download_downloading_summary, "Temp"))
-				.setChannelId("downloading-channel");
+				.setChannelId("downloading-channel")
+				.setPriority(Notification.PRIORITY_MIN)
+				.setTimeoutAfter(1);
 
 		final Notification notification = builder.build();
 		downloadService.startForeground(NOTIFICATION_ID_SHUT_GOOGLE_UP, notification);
-		downloadService.stopForeground(true);
+		downloadService.stopForeground(false);
+
+		NotificationManager notificationManager = (NotificationManager) downloadService.getSystemService(Context.NOTIFICATION_SERVICE);
+		notificationManager.cancel(NOTIFICATION_ID_SHUT_GOOGLE_UP);
 	}
 
 	public static void showSyncNotification(final Context context, int stringId, String extra) {
