@@ -53,19 +53,19 @@ public final class MenuUtil {
 		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PLAY_SHUFFLED, true)) {
 			menu.setGroupVisible(R.id.hide_play_shuffled, false);
 		}
-		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PLAY_NEXT, false)) {
+		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PLAY_NEXT, true)) {
 			menu.setGroupVisible(R.id.hide_play_next, false);
 		}
 		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PLAY_LAST, true)) {
 			menu.setGroupVisible(R.id.hide_play_last, false);
 		}
-		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_DOWNLOAD, false)) {
+		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_DOWNLOAD, true)) {
 			menu.setGroupVisible(R.id.hide_download, false);
 		}
-		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PIN, false)) {
+		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_PIN, true)) {
 			menu.setGroupVisible(R.id.hide_pin, false);
 		}
-		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_DELETE, false)) {
+		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_DELETE, true)) {
 			menu.setGroupVisible(R.id.hide_delete, false);
 		}
 		if(!prefs.getBoolean(Constants.PREFERENCES_KEY_MENU_STAR, true)) {
