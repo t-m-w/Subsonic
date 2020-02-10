@@ -461,14 +461,11 @@ public final class Notifications {
 				.setContentText(downloadService.getResources().getString(R.string.download_downloading_summary, "Temp"))
 				.setChannelId("downloading-channel")
 				.setPriority(Notification.PRIORITY_MIN)
-				.setTimeoutAfter(1);
+				.setTimeoutAfter(6);
 
 		final Notification notification = builder.build();
 		downloadService.startForeground(NOTIFICATION_ID_SHUT_GOOGLE_UP, notification);
 		downloadService.stopForeground(false);
-
-		NotificationManager notificationManager = (NotificationManager) downloadService.getSystemService(Context.NOTIFICATION_SERVICE);
-		notificationManager.cancel(NOTIFICATION_ID_SHUT_GOOGLE_UP);
 	}
 
 	public static void showSyncNotification(final Context context, int stringId, String extra) {
