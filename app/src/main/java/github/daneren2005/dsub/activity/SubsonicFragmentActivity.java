@@ -703,11 +703,11 @@ public class SubsonicFragmentActivity extends SubsonicActivity implements Downlo
 		sessionInitialized = true;
 	}
 	private void loadSettings() {
-		PreferenceManager.setDefaultValues(this, R.xml.settings_appearance, false);
-		PreferenceManager.setDefaultValues(this, R.xml.settings_cache, false);
-		PreferenceManager.setDefaultValues(this, R.xml.settings_drawer, false);
-		PreferenceManager.setDefaultValues(this, R.xml.settings_sync, false);
-		PreferenceManager.setDefaultValues(this, R.xml.settings_playback, false);
+		PreferenceManager.setDefaultValues(this, R.xml.settings_appearance, true);
+		PreferenceManager.setDefaultValues(this, R.xml.settings_cache, true);
+		PreferenceManager.setDefaultValues(this, R.xml.settings_drawer, true);
+		PreferenceManager.setDefaultValues(this, R.xml.settings_sync, true);
+		PreferenceManager.setDefaultValues(this, R.xml.settings_playback, true);
 
 		SharedPreferences prefs = Util.getPreferences(this);
 		if (!prefs.contains(Constants.PREFERENCES_KEY_CACHE_LOCATION) || prefs.getString(Constants.PREFERENCES_KEY_CACHE_LOCATION, null) == null) {
