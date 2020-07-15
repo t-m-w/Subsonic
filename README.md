@@ -1,3 +1,5 @@
+Note: This is an unofficial personal fork. You're free to use it, of course, but it is not meant for use by anyone other than its creator.
+
 ## Basic Instructions
 Grab dependent libraries
 ```
