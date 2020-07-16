@@ -743,6 +743,7 @@ public class CachedMusicService implements MusicService {
 		if (bitmap != null) {
 			return bitmap;
 		} else {
+			if (Util.isOffline(context)) return null;
 			return musicService.getCoverArt(context, entry, size, progressListener, task);
 		}
     }
@@ -940,6 +941,7 @@ public class CachedMusicService implements MusicService {
 
 		String cacheName = getCacheName(context, "newestPodcastEpisodes");
 		try {
+			if (Util.isOffline(context)) throw new IOException();
 			result = musicService.getNewestPodcastEpisodes(refresh, context, progressListener, count);
 			FileUtil.serialize(context, result, cacheName);
 		} catch(IOException e) {
@@ -1022,9 +1024,21 @@ public class CachedMusicService implements MusicService {
 
 	@Override
 	public MusicDirectory getBookmarks(boolean refresh, Context context, ProgressListener progressListener) throws Exception {
-		MusicDirectory bookmarks = musicService.getBookmarks(refresh, context, progressListener);
-		
+		MusicDirectory bookmarks = null;
 		MusicDirectory oldBookmarks = FileUtil.deserialize(context, "bookmarks", MusicDirectory.class);
+
+		if (Util.isOffline(context) || !Util.isNetworkConnected(context)) return oldBookmarks;
+
+		try {
+			bookmarks = musicService.getBookmarks(refresh, context, progressListener);
+		}
+		catch (Exception ex) {
+			if (oldBookmarks == null) {
+				throw ex;
+			}
+			return oldBookmarks;
+		}
+
 		if(oldBookmarks != null) {
 			final List<Entry> oldList = oldBookmarks.getChildren();
 			final List<Entry> newList = new ArrayList<Entry>();

@@ -481,7 +481,7 @@ public final class Util {
 
 	public static boolean disableExitPrompt(Context context) {
 		SharedPreferences prefs = getPreferences(context);
-		return prefs.getBoolean(Constants.PREFERENCES_KEY_DISABLE_EXIT_PROMPT, false);
+		return prefs.getBoolean(Constants.PREFERENCES_KEY_DISABLE_EXIT_PROMPT, true);
 	}
 
 	public static String getVideoPlayerType(Context context) {
@@ -1357,7 +1357,7 @@ public final class Util {
 					if(downloadService.getPlayerState() == PlayerState.STARTED) {
 						Log.i(TAG, "Temporary loss of focus");
 						SharedPreferences prefs = getPreferences(context);
-						int lossPref = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_TEMP_LOSS, "1"));
+						int lossPref = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_TEMP_LOSS, "0"));
 						if(lossPref == 2 || (lossPref == 1 && focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)) {
 							lowerFocus = true;
 							downloadService.setVolume(0.1f);

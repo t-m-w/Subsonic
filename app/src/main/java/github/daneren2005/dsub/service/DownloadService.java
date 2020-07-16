@@ -1245,7 +1245,7 @@ public class DownloadService extends Service {
 		return seekToWrapper(Integer.parseInt(Util.getPreferences(this).getString(Constants.PREFERENCES_KEY_REWIND_INTERVAL, "10"))*-1000);
 	}
 	public synchronized int fastForward() {
-		return seekToWrapper(Integer.parseInt(Util.getPreferences(this).getString(Constants.PREFERENCES_KEY_FASTFORWARD_INTERVAL, "30"))*1000);
+		return seekToWrapper(Integer.parseInt(Util.getPreferences(this).getString(Constants.PREFERENCES_KEY_FASTFORWARD_INTERVAL, "10"))*1000);
 	}
 	protected int seekToWrapper(int difference) {
 		int msPlayed = Math.max(0, getPlayerPosition());
@@ -1537,7 +1537,7 @@ public class DownloadService extends Service {
 			Notifications.showPlayingNotification(this, this, handler, currentPlaying.getSong());
 		} else if (pause) {
 			SharedPreferences prefs = Util.getPreferences(this);
-			if(prefs.getBoolean(Constants.PREFERENCES_KEY_PERSISTENT_NOTIFICATION, false)) {
+			if(prefs.getBoolean(Constants.PREFERENCES_KEY_PERSISTENT_NOTIFICATION, true)) {
 				Notifications.showPlayingNotification(this, this, handler, currentPlaying.getSong());
 			} else {
 				Notifications.hidePlayingNotification(this, this, handler);
@@ -2362,7 +2362,7 @@ public class DownloadService extends Service {
 	private synchronized void checkRemovePlayed() {
 		boolean changed = false;
 		SharedPreferences prefs = Util.getPreferences(this);
-		int keepCount = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_KEEP_PLAYED_CNT, "0"));
+		int keepCount = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_KEEP_PLAYED_CNT, "2"));
 		while(currentPlayingIndex > keepCount) {
 			downloadList.remove(0);
 			currentPlayingIndex = downloadList.indexOf(currentPlaying);

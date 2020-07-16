@@ -72,6 +72,11 @@ public class OfflineMusicService implements MusicService {
 	private static final String TAG = OfflineMusicService.class.getSimpleName();
 	private static final String ERRORMSG = "Not available in offline mode";
 	private static final Random random = new Random();
+	private final CachedMusicService cachedMusicService;
+
+	public OfflineMusicService(CachedMusicService cachedMusicService) {
+		this.cachedMusicService = cachedMusicService;
+	}
 
 	@Override
 	public void ping(Context context, ProgressListener progressListener) throws Exception {
@@ -732,7 +737,12 @@ public class OfflineMusicService implements MusicService {
 
 	@Override
 	public String getCoverArtUrl(Context context, Entry entry) throws Exception {
-		throw new OfflineException(ERRORMSG);
+		try {
+			return cachedMusicService.getCoverArtUrl(context, entry);
+		}
+		catch (Exception ex) {
+			throw new OfflineException(ERRORMSG);
+		}
 	}
 
 	@Override
@@ -776,7 +786,12 @@ public class OfflineMusicService implements MusicService {
 
 	@Override
 	public MusicDirectory getNewestPodcastEpisodes(boolean refresh, Context context, ProgressListener progressListener, int count) throws Exception {
-		throw new OfflineException(ERRORMSG);
+		try {
+			return cachedMusicService.getNewestPodcastEpisodes(refresh, context, progressListener, count);
+		}
+		catch (Exception ex) {
+			throw new OfflineException(ERRORMSG);
+		}
 	}
 
 	@Override
@@ -811,7 +826,12 @@ public class OfflineMusicService implements MusicService {
 
 	@Override
 	public MusicDirectory getBookmarks(boolean refresh, Context context, ProgressListener progressListener) throws Exception {
-		throw new OfflineException(ERRORMSG);
+		try {
+			return cachedMusicService.getBookmarks(refresh, context, progressListener);
+		}
+		catch (Exception ex) {
+			throw new OfflineException(ERRORMSG);
+		}
 	}
 
 	@Override
