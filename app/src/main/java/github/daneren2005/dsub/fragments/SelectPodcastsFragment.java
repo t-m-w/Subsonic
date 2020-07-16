@@ -175,7 +175,7 @@ public class SelectPodcastsFragment extends SelectRecyclerFragment<Serializable>
 
 		if(!Util.isOffline(context) && ServerInfo.hasNewestPodcastEpisodes(context)) {
 			try {
-				newestEpisodes = musicService.getNewestPodcastEpisodes(refresh, context, listener, 10);
+				newestEpisodes = musicService.getNewestPodcastEpisodes(refresh, context, listener, 64);
 
 				for(MusicDirectory.Entry entry: newestEpisodes.getChildren()) {
 					for(PodcastChannel channel: channels) {
