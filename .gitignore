@@ -14,3 +14,5 @@ proguard_logs/
 /build/
 local.properties
 *Thumbs.db
+/app/*.apk
+/app/floss/
