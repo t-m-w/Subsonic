@@ -83,6 +83,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 	private ListPreference tempLoss;
 	private ListPreference pauseDisconnect;
 	private ListPreference audioFocusPreference;
+	private Preference volumeLevel;
 	private Preference addServerPreference;
 	private PreferenceCategory serversCategory;
 	private ListPreference songPressAction;
@@ -175,6 +176,10 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		else if (Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR.equals(key)) {
 			setMediaButtonsEnabled(Integer.parseInt(sharedPreferences.getString(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR, "0")) < 4);
 		}
+		else if (Constants.PREFERENCES_KEY_VOLUME_LEVEL.equals(key)) {
+			DownloadService downloadService = DownloadService.getInstance();
+			downloadService.reapplyVolume();
+		}
 		else if (Constants.PREFERENCES_KEY_CACHE_LOCATION.equals(key)) {
 			setCacheLocation(sharedPreferences.getString(key, ""));
 		}
@@ -245,6 +250,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		tempLoss = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_TEMP_LOSS);
 		pauseDisconnect = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_PAUSE_DISCONNECT);
 		audioFocusPreference = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR);
+		volumeLevel = this.findPreference(Constants.PREFERENCES_KEY_VOLUME_LEVEL);
 		serversCategory = (PreferenceCategory) this.findPreference(Constants.PREFERENCES_KEY_SERVER_KEY);
 		addServerPreference = this.findPreference(Constants.PREFERENCES_KEY_SERVER_ADD);
 		videoPlayer = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_VIDEO_PLAYER);

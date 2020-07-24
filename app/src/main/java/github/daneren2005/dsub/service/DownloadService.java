@@ -2725,6 +2725,8 @@ public class DownloadService extends Service {
 			} else if (rg_result < 0.0f) {
 				rg_result = 0.0f;
 			}
+			/* adjust according to volume level in preferences */
+			rg_result = (Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_VOLUME_LEVEL, "100")) / 100.0f) * rg_result;
 			mediaPlayer.setVolume(rg_result, rg_result);
 		} catch(IOException e) {
 			Log.w(TAG, "Failed to apply replay gain values", e);

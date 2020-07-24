@@ -41,6 +41,14 @@
 			android:entryValues="@array/audioFocusBehaviorValues"
 			android:entries="@array/audioFocusBehaviorNames"/>
 
+		<github.daneren2005.dsub.view.SeekBarPreference
+			android:title="@string/settings.volume_level_title"
+			android:key="volumeLevel"
+			android:defaultValue="100"
+			android:dialogLayout="@layout/seekbar_preference"
+			myns:min="0"
+			myns:max="100"/>
+
 		<CheckBoxPreference
 			android:title="@string/settings.persistent_title"
 			android:summary="@string/settings.persistent_summary"
