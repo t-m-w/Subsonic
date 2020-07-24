@@ -393,6 +393,8 @@
 	<string name="settings.disconnect_pause_title">Pause on Disconnect</string>
 	<string name="settings.disconnect_pause_both">Pause</string>
 	<string name="settings.disconnect_pause_neither">Do Nothing</string>
+	<string name="settings.ignore_audio_focus_requests_title">Ignore Audio Focus Requests</string>
+	<string name="settings.ignore_audio_focus_requests_summary">Audio can continue playing while other media is playing.</string>
 	<string name="settings.persistent_title">Persistent Notification</string>
 	<string name="settings.persistent_summary">Show the notification even after pausing.  Press the stop button to clear it away.</string>
 	<string name="settings.gapless_playback">Gapless Playback</string>

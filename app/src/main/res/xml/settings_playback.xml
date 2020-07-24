@@ -35,6 +35,12 @@
 			android:entries="@array/disconnectPauseNames"/>
 
 		<CheckBoxPreference
+			android:title="@string/settings.ignore_audio_focus_requests_title"
+			android:summary="@string/settings.ignore_audio_focus_requests_summary"
+			android:key="ignoreAudioFocusRequests"
+			android:defaultValue="false"/>
+
+		<CheckBoxPreference
 			android:title="@string/settings.persistent_title"
 			android:summary="@string/settings.persistent_summary"
 			android:key="persistentNotification"

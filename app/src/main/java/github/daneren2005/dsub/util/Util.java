@@ -1352,9 +1352,10 @@ public final class Util {
     private static OnAudioFocusChangeListener getAudioFocusChangeListener(final Context context, final AudioManager audioManager) {
 		return new OnAudioFocusChangeListener() {
 			public void onAudioFocusChange(int focusChange) {
+				boolean ignoreFocus = Util.getPreferences(context).getBoolean(Constants.PREFERENCES_KEY_IGNORE_AUDIO_FOCUS_REQUESTS, false);
 				DownloadService downloadService = (DownloadService)context;
 				if((focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) && !downloadService.isRemoteEnabled()) {
-					if(downloadService.getPlayerState() == PlayerState.STARTED) {
+					if(!ignoreFocus && downloadService.getPlayerState() == PlayerState.STARTED) {
 						Log.i(TAG, "Temporary loss of focus");
 						SharedPreferences prefs = getPreferences(context);
 						int lossPref = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_TEMP_LOSS, "0"));
@@ -1375,7 +1376,7 @@ public final class Util {
 						lowerFocus = false;
 						downloadService.setVolume(1.0f);
 					}
-				} else if(focusChange == AudioManager.AUDIOFOCUS_LOSS && !downloadService.isRemoteEnabled()) {
+				} else if(!ignoreFocus && focusChange == AudioManager.AUDIOFOCUS_LOSS && !downloadService.isRemoteEnabled()) {
 					Log.i(TAG, "Permanently lost focus");
 					focusListener = null;
 					downloadService.pause();
