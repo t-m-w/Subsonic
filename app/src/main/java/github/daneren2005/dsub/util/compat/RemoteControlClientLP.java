@@ -635,6 +635,17 @@ public class RemoteControlClientLP extends RemoteControlClientBase {
 
 		@Override
 		public boolean onMediaButtonEvent(@NonNull Intent mediaButtonIntent) {
+			if(Build.VERSION.SDK_INT >= 21) {
+				SharedPreferences prefs = Util.getPreferences(downloadService);
+				if (!prefs.getBoolean(Constants.PREFERENCES_KEY_MEDIA_BUTTONS, true)) {
+					Log.v(TAG, "Ignoring media button as per Media Buttons setting");
+					return true;
+				}
+				if (Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR, "0")) >= 4) {
+					Log.v(TAG, "Ignoring media button as per Audio Focus Behavior setting");
+					return true;
+				}
+			}
 			if (getMediaSession() != null && Intent.ACTION_MEDIA_BUTTON.equals(mediaButtonIntent.getAction())) {
 				KeyEvent keyEvent = mediaButtonIntent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
 				if (keyEvent != null) {

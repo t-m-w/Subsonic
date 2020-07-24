@@ -34,11 +34,12 @@
 			android:entryValues="@array/disconnectPauseValues"
 			android:entries="@array/disconnectPauseNames"/>
 
-		<CheckBoxPreference
-			android:title="@string/settings.ignore_audio_focus_requests_title"
-			android:summary="@string/settings.ignore_audio_focus_requests_summary"
-			android:key="ignoreAudioFocusRequests"
-			android:defaultValue="false"/>
+		<ListPreference
+			android:title="@string/settings.audio_focus_behavior_title"
+			android:key="audioFocusBehavior"
+			android:defaultValue="0"
+			android:entryValues="@array/audioFocusBehaviorValues"
+			android:entries="@array/audioFocusBehaviorNames"/>
 
 		<CheckBoxPreference
 			android:title="@string/settings.persistent_title"

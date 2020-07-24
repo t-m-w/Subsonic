@@ -82,6 +82,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 	private ListPreference keepPlayedCount;
 	private ListPreference tempLoss;
 	private ListPreference pauseDisconnect;
+	private ListPreference audioFocusPreference;
 	private Preference addServerPreference;
 	private PreferenceCategory serversCategory;
 	private ListPreference songPressAction;
@@ -108,14 +109,6 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 	@Override
 	public void onCreate(Bundle bundle) {
 		super.onCreate(bundle);
-
-		if(Build.VERSION.SDK_INT >= 21) {
-			CheckBoxPreference mediaButtons = (CheckBoxPreference) findPreference("mediaButtons");
-			if (mediaButtons != null) {
-				PreferenceCategory otherCategory = (PreferenceCategory) findPreference("otherSettings");
-				otherCategory.removePreference(mediaButtons);
-			}
-		}
 
 		int instance = this.getArguments().getInt(Constants.PREFERENCES_KEY_SERVER_INSTANCE, -1);
 		if (instance != -1) {
@@ -178,6 +171,9 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		}
 		else if (Constants.PREFERENCES_KEY_MEDIA_BUTTONS.equals(key)) {
 			setMediaButtonsEnabled(sharedPreferences.getBoolean(key, true));
+		}
+		else if (Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR.equals(key)) {
+			setMediaButtonsEnabled(Integer.parseInt(sharedPreferences.getString(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR, "0")) < 4);
 		}
 		else if (Constants.PREFERENCES_KEY_CACHE_LOCATION.equals(key)) {
 			setCacheLocation(sharedPreferences.getString(key, ""));
@@ -248,6 +244,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		keepPlayedCount = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_KEEP_PLAYED_CNT);
 		tempLoss = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_TEMP_LOSS);
 		pauseDisconnect = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_PAUSE_DISCONNECT);
+		audioFocusPreference = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR);
 		serversCategory = (PreferenceCategory) this.findPreference(Constants.PREFERENCES_KEY_SERVER_KEY);
 		addServerPreference = this.findPreference(Constants.PREFERENCES_KEY_SERVER_ADD);
 		videoPlayer = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_VIDEO_PLAYER);
@@ -419,6 +416,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			keepPlayedCount.setSummary(keepPlayedCount.getEntry());
 			tempLoss.setSummary(tempLoss.getEntry());
 			pauseDisconnect.setSummary(pauseDisconnect.getEntry());
+			audioFocusPreference.setSummary(audioFocusPreference.getEntry());
 			songPressAction.setSummary(songPressAction.getEntry());
 			videoPlayer.setSummary(videoPlayer.getEntry());
 

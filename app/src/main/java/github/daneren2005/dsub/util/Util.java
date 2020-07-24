@@ -1298,7 +1298,8 @@ public final class Util {
 
         // Only do it if enabled in the settings and api < 21
         SharedPreferences prefs = getPreferences(context);
-        boolean enabled = prefs.getBoolean(Constants.PREFERENCES_KEY_MEDIA_BUTTONS, true);
+        boolean enabled = prefs.getBoolean(Constants.PREFERENCES_KEY_MEDIA_BUTTONS, true) &&
+				Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR, "0")) < 4;
 
         if (enabled && Build.VERSION.SDK_INT < 21) {
 
@@ -1352,10 +1353,10 @@ public final class Util {
     private static OnAudioFocusChangeListener getAudioFocusChangeListener(final Context context, final AudioManager audioManager) {
 		return new OnAudioFocusChangeListener() {
 			public void onAudioFocusChange(int focusChange) {
-				boolean ignoreFocus = Util.getPreferences(context).getBoolean(Constants.PREFERENCES_KEY_IGNORE_AUDIO_FOCUS_REQUESTS, false);
+				int audioFocusBehavior = Integer.parseInt(Util.getPreferences(context).getString(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR, "0"));
 				DownloadService downloadService = (DownloadService)context;
 				if((focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) && !downloadService.isRemoteEnabled()) {
-					if(!ignoreFocus && downloadService.getPlayerState() == PlayerState.STARTED) {
+					if(audioFocusBehavior == 0 && downloadService.getPlayerState() == PlayerState.STARTED) {
 						Log.i(TAG, "Temporary loss of focus");
 						SharedPreferences prefs = getPreferences(context);
 						int lossPref = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_TEMP_LOSS, "0"));
@@ -1376,7 +1377,7 @@ public final class Util {
 						lowerFocus = false;
 						downloadService.setVolume(1.0f);
 					}
-				} else if(!ignoreFocus && focusChange == AudioManager.AUDIOFOCUS_LOSS && !downloadService.isRemoteEnabled()) {
+				} else if(audioFocusBehavior == 0 && focusChange == AudioManager.AUDIOFOCUS_LOSS && !downloadService.isRemoteEnabled()) {
 					Log.i(TAG, "Permanently lost focus");
 					focusListener = null;
 					downloadService.pause();

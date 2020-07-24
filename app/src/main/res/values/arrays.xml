@@ -180,6 +180,17 @@
 		<item>@string/settings.disconnect_pause_neither</item>
 	</string-array>
 
+	<string-array name="audioFocusBehaviorValues">
+		<item>0</item>
+		<item>3</item>
+		<item>4</item>
+	</string-array>
+	<string-array name="audioFocusBehaviorNames">
+		<item>@string/settings.audio_focus_standard</item>
+		<item>@string/settings.audio_focus_ignore_focus_requests</item>
+		<item>@string/settings.audio_focus_do_not_use</item>
+	</string-array>
+
 	<string-array name="videoPlayerValues">
 		<item>raw</item>
 		<item>hls</item>

@@ -1530,7 +1530,9 @@ public class DownloadService extends Service {
 
 		if(playerState == STARTED) {
 			AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-			Util.requestAudioFocus(this, audioManager);
+			if (Integer.parseInt(Util.getPreferences(this).getString(Constants.PREFERENCES_KEY_AUDIO_FOCUS_BEHAVIOR, "0")) < 4) {
+				Util.requestAudioFocus(this, audioManager);
+			}
 		}
 
 		if (show) {
