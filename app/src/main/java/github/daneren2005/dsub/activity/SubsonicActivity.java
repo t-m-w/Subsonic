@@ -198,6 +198,15 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 					finish();
 				}
 			}
+			case PERMISSIONS_REQUEST_LOCATION: {
+				// If request is cancelled, the result arrays are empty.
+				if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+				} else {
+					Util.toast(this, R.string.permission_location_failed);
+					finish();
+				}
+			}
 		}
 	}
 
@@ -1248,7 +1257,7 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 			PrintWriter printWriter = null;
 			try {
 
-				PackageInfo packageInfo = context.getPackageManager().getPackageInfo("github.daneren2005.dsub", 0);
+				PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
 				file = new File(Environment.getExternalStorageDirectory(), "dsub-stacktrace.txt");
 				printWriter = new PrintWriter(file);
 				printWriter.println("Android API level: " + Build.VERSION.SDK);
