@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import android.content.Context;
@@ -79,6 +81,8 @@ public class CachedMusicService implements MusicService {
     private final TimeLimitedCache<List<Playlist>> cachedPlaylists = new TimeLimitedCache<List<Playlist>>(3600, TimeUnit.SECONDS);
     private final TimeLimitedCache<List<MusicFolder>> cachedMusicFolders = new TimeLimitedCache<List<MusicFolder>>(10 * 3600, TimeUnit.SECONDS);
 	private final TimeLimitedCache<List<PodcastChannel>> cachedPodcastChannels = new TimeLimitedCache<List<PodcastChannel>>(10 * 3600, TimeUnit.SECONDS);
+	private final HashMap<String, HashMap<String, MusicDirectory.Entry>> podcastEpisodes = new HashMap<String, HashMap<String, MusicDirectory.Entry>>();
+	private final HashMap<String, MusicDirectory.Entry> newestBookmarks = new HashMap<String, MusicDirectory.Entry>();
     private String restUrl;
 	private String musicFolderId;
 	private boolean isTagBrowsing = false;
@@ -223,6 +227,8 @@ public class CachedMusicService implements MusicService {
 		}
 		dir.sortChildren(context, musicService.getInstance(context));
 
+		updateBookmarksFromCache(dir, context);
+
 		return dir;
     }
 
@@ -270,6 +276,8 @@ public class CachedMusicService implements MusicService {
 			deleteRemovedEntries(context, dir, cached);
 		}
 		dir.sortChildren(context, musicService.getInstance(context));
+
+		updateBookmarksFromCache(dir, context);
 
 		return dir;
 	}
@@ -325,6 +333,8 @@ public class CachedMusicService implements MusicService {
 		}
 		dir.sortChildren(context, musicService.getInstance(context));
 
+		updateBookmarksFromCache(dir, context);
+
 		return dir;
 	}
 
@@ -370,6 +380,9 @@ public class CachedMusicService implements MusicService {
 				}
 			}
 		}
+
+		updateBookmarksFromCache(dir, context);
+
         return dir;
     }
 
@@ -624,6 +637,9 @@ public class CachedMusicService implements MusicService {
 			}
 
 			FileUtil.serialize(context, dir, getCacheName(context, type, Integer.toString(offset)));
+
+			updateBookmarksFromCache(dir, context);
+
 			return dir;
 		} catch(IOException e) {
 			Log.w(TAG, "Failed to refresh album list: ", e);
@@ -642,6 +658,7 @@ public class CachedMusicService implements MusicService {
 					return new MusicDirectory();
 				}
 			} else {
+				updateBookmarksFromCache(dir, context);
 				return dir;
 			}
 		}
@@ -652,6 +669,7 @@ public class CachedMusicService implements MusicService {
 		try {
 			MusicDirectory dir = musicService.getAlbumList(type, extra, size, offset, refresh, context, progressListener);
 			FileUtil.serialize(context, dir, getCacheName(context, type + extra, Integer.toString(offset)));
+			updateBookmarksFromCache(dir, context);
 			return dir;
 		} catch(IOException e) {
 			Log.w(TAG, "Failed to refresh album list: ", e);
@@ -670,6 +688,7 @@ public class CachedMusicService implements MusicService {
 					return new MusicDirectory();
 				}
 			} else {
+				updateBookmarksFromCache(dir, context);
 				return dir;
 			}
 		}
@@ -677,12 +696,12 @@ public class CachedMusicService implements MusicService {
 
 	@Override
 	public MusicDirectory getSongList(String type, int size, int offset, Context context, ProgressListener progressListener) throws Exception {
-		return musicService.getSongList(type, size, offset, context, progressListener);
+		return updateBookmarksFromCache(musicService.getSongList(type, size, offset, context, progressListener), context);
 	}
 
 	@Override
 	public MusicDirectory getRandomSongs(int size, String artistId, Context context, ProgressListener progressListener) throws Exception {
-		return musicService.getRandomSongs(size, artistId, context, progressListener);
+		return updateBookmarksFromCache(musicService.getRandomSongs(size, artistId, context, progressListener), context);
 	}
 
 	@Override
@@ -716,12 +735,15 @@ public class CachedMusicService implements MusicService {
 			}
 			FileUtil.serialize(context, dir, "starred");
 
+			updateBookmarksFromCache(dir, context);
+
 			return dir;
 		} catch(IOException e) {
 			MusicDirectory dir = FileUtil.deserialize(context, "starred", MusicDirectory.class);
 			if(dir == null) {
 				throw e;
 			} else {
+				updateBookmarksFromCache(dir, context);
 				return dir;
 			}
 		}
@@ -729,7 +751,7 @@ public class CachedMusicService implements MusicService {
 
     @Override
     public MusicDirectory getRandomSongs(int size, String folder, String genre, String startYear, String endYear, Context context, ProgressListener progressListener) throws Exception {
-        return musicService.getRandomSongs(size, folder, genre, startYear, endYear, context, progressListener);
+        return updateBookmarksFromCache(musicService.getRandomSongs(size, folder, genre, startYear, endYear, context, progressListener), context);
     }
 
 	@Override
@@ -874,6 +896,8 @@ public class CachedMusicService implements MusicService {
 			MusicDirectory dir = musicService.getSongsByGenre(genre, count, offset, context, progressListener);
 			FileUtil.serialize(context, dir, getCacheName(context, "genreSongs", Integer.toString(offset)));
 
+			updateBookmarksFromCache(dir, context);
+
 			return dir;
 		} catch(IOException e) {
 			MusicDirectory dir = FileUtil.deserialize(context, getCacheName(context, "genreSongs", Integer.toString(offset)), MusicDirectory.class);
@@ -887,6 +911,7 @@ public class CachedMusicService implements MusicService {
 					return new MusicDirectory();
 				}
 			} else {
+				updateBookmarksFromCache(dir, context);
 				return dir;
 			}
 		}
@@ -894,7 +919,7 @@ public class CachedMusicService implements MusicService {
 
 	@Override
 	public MusicDirectory getTopTrackSongs(String artist, int size, Context context, ProgressListener progressListener) throws Exception {
-		return musicService.getTopTrackSongs(artist, size, context, progressListener);
+		return updateBookmarksFromCache(musicService.getTopTrackSongs(artist, size, context, progressListener), context);
 	}
 
 	@Override
@@ -912,6 +937,27 @@ public class CachedMusicService implements MusicService {
 				FileUtil.serialize(context, new ArrayList<PodcastChannel>(result), getCacheName(context, "podcast"));
 			}
 			cachedPodcastChannels.set(result);
+		}
+
+		if (result != null) {
+			// Remove cached podcast episodes for channels that are no longer present
+			ArrayList<String> toRemove = new ArrayList<String>();
+			for (String channelId : podcastEpisodes.keySet()) {
+				for (PodcastChannel channel : result) {
+					if (channel.getId() == channelId) break;
+				}
+				podcastEpisodes.get(channelId).clear();
+				toRemove.add(channelId);
+			}
+			podcastEpisodes.keySet().removeAll(toRemove);
+			toRemove.clear();
+
+			// Add HashMaps for channels that are new to our cache
+			for (PodcastChannel channel : result) {
+				if (!podcastEpisodes.keySet().contains(channel.getId())) {
+					podcastEpisodes.put(channel.getId(), new HashMap<String, MusicDirectory.Entry>());
+				}
+			}
 		}
 
 		return result;
@@ -932,6 +978,10 @@ public class CachedMusicService implements MusicService {
 			FileUtil.serialize(context, result, getCacheName(context, "directory", altId));
 		}
 
+		cachePodcastEpisodes(refresh, id, result);
+
+		updateBookmarksFromCache(result, context);
+
 		return result;
 	}
 
@@ -947,6 +997,7 @@ public class CachedMusicService implements MusicService {
 		} catch(IOException e) {
 			result = FileUtil.deserialize(context, cacheName, MusicDirectory.class, 24);
 		} finally {
+			updateBookmarksFromCache(result, context);
 			return result;
 		}
 	}
@@ -1022,12 +1073,158 @@ public class CachedMusicService implements MusicService {
 		}.execute();
 	}
 
+	private MusicDirectory.Entry findPodcastEpisode(String id, Context context) throws Exception {
+		MusicDirectory.Entry entry = null;
+
+		for (HashMap<String, MusicDirectory.Entry> channelEpisodes : podcastEpisodes.values()) {
+			entry = channelEpisodes.get(id);
+			if (entry != null) return entry;
+		}
+
+		if (entry == null) {
+			if (podcastEpisodes.isEmpty()) {
+				getPodcastChannels(false, context, null);
+			}
+			for (Map.Entry<String, HashMap<String, MusicDirectory.Entry>> pair : podcastEpisodes.entrySet()) {
+				if (pair.getValue().isEmpty()) {
+					getPodcastEpisodes(false, pair.getKey(), context, null);
+					if (entry == null) entry = pair.getValue().get(id);
+				}
+			}
+		}
+
+		return entry;
+	}
+
+	public MusicDirectory updateBookmarksFromCache(MusicDirectory dir, Context context) {
+		if (dir == null) return null;
+
+		Integer updatedCount = 0;
+
+		List<MusicDirectory.Entry> children = dir.getChildren();
+
+		for (MusicDirectory.Entry entry : children) {
+			if (entry.getBookmark() == null) {
+				MusicDirectory.Entry bookmarkEntry = null;
+				try {
+					bookmarkEntry = findNewestBookmark(entry.getId(), context);
+				} catch (Exception error) {
+					Log.e(TAG, "Failed to find newest bookmark for " + entry.getId() + " / " + entry.getPath(), error);
+				}
+
+				if (bookmarkEntry != null) {
+					entry.setBookmark(bookmarkEntry.getBookmark());
+					updatedCount++;
+				}
+			}
+		}
+
+		if (!children.isEmpty()) Log.w(TAG, "Updated " + updatedCount + " out of " + children.size() + " bookmarks from cache");
+
+		return dir;
+	}
+
+	private MusicDirectory.Entry findNewestBookmark(String id, Context context) throws Exception {
+		MusicDirectory.Entry entry = newestBookmarks.get(id);
+
+		if (entry == null && newestBookmarks.isEmpty()) {
+			getBookmarks(false, context, null);
+			entry = newestBookmarks.get(id);
+		}
+
+		return entry;
+	}
+
+	private void cachePodcastEpisodes(boolean refresh, String id, MusicDirectory episodes) {
+		HashMap<String, MusicDirectory.Entry> eps = podcastEpisodes.get(id);
+
+		if (episodes == null) {
+			if (eps != null) {
+				eps.clear();
+				podcastEpisodes.remove(id);
+			}
+			return;
+		}
+
+		if (eps == null) {
+			eps = new HashMap<String, MusicDirectory.Entry>();
+			podcastEpisodes.put(id, eps);
+		}
+
+		if (refresh || eps.isEmpty()) {
+			Integer i = 0;
+			eps.clear();
+
+			for (MusicDirectory.Entry entry : episodes.getChildren()) {
+				eps.put(entry.getId(), entry);
+				i++;
+			}
+
+			Log.w(TAG, "Added " + i.toString() + " entries to " + id + " cache");
+		}
+	}
+
+	private void cacheNewestBookmarks(MusicDirectory bookmarks) {
+		if (bookmarks == null) return;
+
+		newestBookmarks.clear();
+
+		for (MusicDirectory.Entry bookmark : bookmarks.getChildren()) {
+			String id = bookmark.getId();
+			MusicDirectory.Entry existingBookmark = newestBookmarks.get(id);
+
+			if (existingBookmark != null) {
+				Bookmark existingMark = existingBookmark.getBookmark();
+				Bookmark newMark = bookmark.getBookmark();
+
+				// Do not overwrite existing bookmark entry if new one has no bookmark or is older
+				if (newMark == null ||
+				    (existingMark != null &&
+				     newMark.getChanged().compareTo(existingMark.getChanged()) < 0))
+					continue;
+			}
+
+			newestBookmarks.put(id, bookmark);
+		}
+	}
+
+	private void fixPodcastBookmarkMetadata(MusicDirectory bookmarks, Context context) {
+		Integer updatedCount = 0;
+
+		for (MusicDirectory.Entry entry : bookmarks.getChildren()) {
+			if (entry.getType() != MusicDirectory.Entry.TYPE_PODCAST ||
+			    entry.getPath() != null)
+				continue;
+
+			MusicDirectory.Entry podcastEntry = null;
+			try {
+				podcastEntry = findPodcastEpisode(entry.getId(), context);
+				if (podcastEntry != null) {
+					if (podcastEntry.getParent() != null) entry.setParent(podcastEntry.getParent());
+					if (podcastEntry.getPath() != null) entry.setPath(podcastEntry.getPath());
+					if (podcastEntry.getArtist() != null) entry.setArtist(podcastEntry.getArtist());
+					if (podcastEntry.getAlbum() != null) entry.setAlbum(podcastEntry.getAlbum());
+					updatedCount++;
+				}
+			} catch (Exception e) {
+				Log.w(TAG, "Failed to look up podcast by entry id in bookmark", e);
+			}
+
+			if (podcastEntry == null) Log.w(TAG, "Could not find entry id of bookmark in podcasts");
+		}
+		Log.w(TAG, "Updated metadata for " + updatedCount + " podcast bookmarks");
+	}
+
 	@Override
 	public MusicDirectory getBookmarks(boolean refresh, Context context, ProgressListener progressListener) throws Exception {
 		MusicDirectory bookmarks = null;
 		MusicDirectory oldBookmarks = FileUtil.deserialize(context, "bookmarks", MusicDirectory.class);
 
-		if (Util.isOffline(context) || !Util.isNetworkConnected(context)) return oldBookmarks;
+		if (Util.isOffline(context) || !Util.isNetworkConnected(context)) {
+			if (newestBookmarks.isEmpty()) cacheNewestBookmarks(oldBookmarks);
+			fixPodcastBookmarkMetadata(oldBookmarks, context);
+			return oldBookmarks;
+		}
 
 		try {
 			bookmarks = musicService.getBookmarks(refresh, context, progressListener);
@@ -1036,6 +1233,8 @@ public class CachedMusicService implements MusicService {
 			if (oldBookmarks == null) {
 				throw ex;
 			}
+			if (newestBookmarks.isEmpty()) cacheNewestBookmarks(oldBookmarks);
+			fixPodcastBookmarkMetadata(oldBookmarks, context);
 			return oldBookmarks;
 		}
 
@@ -1069,6 +1268,10 @@ public class CachedMusicService implements MusicService {
 		}
 		FileUtil.serialize(context, bookmarks, "bookmarks");
 		
+		cacheNewestBookmarks(bookmarks);
+
+		fixPodcastBookmarkMetadata(bookmarks, context);
+
 		return bookmarks;
 	}
 
@@ -1232,12 +1435,15 @@ public class CachedMusicService implements MusicService {
 			MusicDirectory dir = musicService.getVideos(refresh, context, progressListener);
 			FileUtil.serialize(context, dir, "videos");
 
+			updateBookmarksFromCache(dir, context);
+
 			return dir;
 		} catch(IOException e) {
 			MusicDirectory dir = FileUtil.deserialize(context, "videos", MusicDirectory.class);
 			if(dir == null) {
 				throw e;
 			} else {
+				updateBookmarksFromCache(dir, context);
 				return dir;
 			}
 		}
