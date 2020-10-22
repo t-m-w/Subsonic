@@ -59,6 +59,7 @@ import github.daneren2005.dsub.R;
 import github.daneren2005.dsub.activity.SubsonicActivity;
 import github.daneren2005.dsub.activity.SubsonicFragmentActivity;
 import github.daneren2005.dsub.adapter.SectionAdapter;
+import github.daneren2005.dsub.adapter.BookmarkAdapter;
 import github.daneren2005.dsub.domain.Artist;
 import github.daneren2005.dsub.domain.Bookmark;
 import github.daneren2005.dsub.domain.Genre;
@@ -1950,6 +1951,12 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 
 					@Override
 					protected void done(Void result) {
+						if(Util.isOffline(context) || getCurrentAdapter() instanceof BookmarkAdapter) {
+							refresh();
+						} else {
+							UpdateView.triggerUpdate();
+						}
+
 						Util.toast(context, context.getResources().getString(R.string.bookmark_deleted_multiple, deletedBookmarks, entriesWithBookmarks.size()));
 					}
 
