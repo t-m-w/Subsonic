@@ -6,4 +6,8 @@
 		android:title="@string/menu.delete_cache"
 		android:icon="?attr/remove"
 		compat:showAsAction="ifRoom|withText"/>
+
+	<item
+		android:id="@+id/menu_select_all"
+		android:title="@string/menu.select_all"/>
 </menu>

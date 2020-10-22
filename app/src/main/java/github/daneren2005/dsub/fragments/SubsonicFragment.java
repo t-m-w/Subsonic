@@ -243,6 +243,13 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				delete();
 				clearSelected();
 				return true;
+			case R.id.menu_select_all:
+				selectAll();
+				return true;
+			case R.id.bookmark_menu_delete:
+				deleteBookmarks();
+				clearSelected();
+				return true;
 			case R.id.menu_add_playlist:
 				List<Entry> songs = getSelectedEntries();
 				addToPlaylist(songs);
@@ -1635,7 +1642,27 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 	}
 
 	protected void playBookmark(final List<Entry> songs, final Entry song, final String playlistName, final String playlistId) {
-		final Integer position = song.getBookmark().getPosition();
+		playBookmark(songs, song, playlistName, playlistId, false);
+	}
+
+	protected void playDownloadFile(final DownloadFile item) {
+		final Entry song = item.getSong();
+		Bookmark mark = song.getBookmark();
+
+		if (mark == null) {
+			new SilentBackgroundTask<Void>(context) {
+				@Override
+				protected Void doInBackground() throws Throwable {
+					getDownloadService().play(item);
+					return null;
+				}
+			}.execute();
+			return;
+		}
+
+		// If bookmark found, then give user choice to start from there or to start over
+
+		final Integer position = mark.getPosition();
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(R.string.bookmark_resume_title)
@@ -1643,7 +1670,7 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 				.setPositiveButton(R.string.bookmark_action_resume, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int id) {
-						playNow(songs, song, position, playlistName, playlistId);
+						getDownloadService().play(item, position);
 					}
 				})
 				.setNegativeButton(R.string.bookmark_action_start_over, new DialogInterface.OnClickListener() {
@@ -1676,7 +1703,56 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 							}
 						}.execute();
 
-						playNow(songs, 0, playlistName, playlistId);
+						getDownloadService().play(item, 0);
+					}
+				});
+		AlertDialog dialog = builder.create();
+		dialog.show();
+	}
+
+	protected void playBookmark(final List<Entry> songs, final Entry song, final String playlistName, final String playlistId, final boolean interrupt) {
+		final Integer position = song.getBookmark().getPosition();
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(context);
+		builder.setTitle(R.string.bookmark_resume_title)
+				.setMessage(getResources().getString(R.string.bookmark_resume, song.getTitle(), Util.formatDuration(position / 1000)))
+				.setPositiveButton(R.string.bookmark_action_resume, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int id) {
+						playNow(songs, song, position, playlistName, playlistId, interrupt);
+					}
+				})
+				.setNegativeButton(R.string.bookmark_action_start_over, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int id) {
+						final Bookmark oldBookmark = song.getBookmark();
+						song.setBookmark(null);
+
+						new SilentBackgroundTask<Void>(context) {
+							@Override
+							protected Void doInBackground() throws Throwable {
+								MusicService musicService = MusicServiceFactory.getMusicService(context);
+								musicService.deleteBookmark(song, context, null);
+
+								return null;
+							}
+
+							@Override
+							protected void error(Throwable error) {
+								song.setBookmark(oldBookmark);
+
+								String msg;
+								if (error instanceof OfflineException || error instanceof ServerTooOldException) {
+									msg = getErrorMessage(error);
+								} else {
+									msg = context.getResources().getString(R.string.bookmark_deleted_error, song.getTitle()) + " " + getErrorMessage(error);
+								}
+
+								Util.toast(context, msg, false);
+							}
+						}.execute();
+
+						playNow(songs, 0, playlistName, playlistId, interrupt);
 					}
 				});
 		AlertDialog dialog = builder.create();
@@ -1692,6 +1768,8 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 	protected void onSongPress(List<Entry> entries, Entry entry, int position, boolean allowPlayAll) {
 		List<Entry> songs = new ArrayList<Entry>();
 
+		Log.w(TAG, "onSongPress");
+
 		String songPressAction = Util.getSongPressAction(context);
 		if("all".equals(songPressAction) && allowPlayAll) {
 			for(Entry song: entries) {
@@ -1704,6 +1782,18 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 			getDownloadService().download(Arrays.asList(entry), false, false, true, false);
 		}  else if("last".equals(songPressAction)) {
 			getDownloadService().download(Arrays.asList(entry), false, false, false, false);
+		} else if("interrupt".equals(songPressAction)) {
+			if (allowPlayAll && entries.size() > 1) {
+				for(Entry song: entries) {
+					if(!song.isDirectory() && !song.isVideo()) {
+						songs.add(song);
+					}
+				}
+				playNow(songs, entry, position, true);
+			} else {
+				songs.add(entry);
+				playNow(songs, true);
+			}
 		} else {
 			songs.add(entry);
 			playNow(songs);
@@ -1713,7 +1803,13 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 	protected void playNow(List<Entry> entries) {
 		playNow(entries, null, null);
 	}
+	protected void playNow(List<Entry> entries, boolean interrupt) {
+		playNow(entries, null, null, interrupt);
+	}
 	protected void playNow(final List<Entry> entries, final String playlistName, final String playlistId) {
+		playNow(entries, playlistName, playlistId, false);
+	}
+	protected void playNow(final List<Entry> entries, final String playlistName, final String playlistId, final boolean interrupt) {
 		new RecursiveLoader(context) {
 			@Override
 			protected Boolean doInBackground() throws Throwable {
@@ -1733,31 +1829,49 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 
 				// If no bookmark found, just play from start
 				if(bookmark == null) {
-					playNow(songs, 0, playlistName, playlistId);
+					playNow(songs, 0, playlistName, playlistId, interrupt);
 				} else {
 					// If bookmark found, then give user choice to start from there or to start over
-					playBookmark(songs, bookmark, playlistName, playlistId);
+					playBookmark(songs, bookmark, playlistName, playlistId, interrupt);
 				}
 			}
 		}.execute();
 	}
+
 	protected void playNow(List<Entry> entries, int position) {
-		playNow(entries, position, null, null);
+		playNow(entries, position, false);
 	}
+
+	protected void playNow(List<Entry> entries, int position, boolean interrupt) {
+		playNow(entries, position, null, null, interrupt);
+	}
+
 	protected void playNow(List<Entry> entries, int position, String playlistName, String playlistId) {
+		playNow(entries, position, playlistName, playlistId, false);
+	}
+
+	protected void playNow(List<Entry> entries, int position, String playlistName, String playlistId, boolean interrupt) {
 		Entry selected = entries.isEmpty() ? null : entries.get(0);
-		playNow(entries, selected, position, playlistName, playlistId);
+		playNow(entries, selected, position, playlistName, playlistId, interrupt);
 	}
 
 	protected void playNow(List<Entry> entries, Entry song, int position) {
-		playNow(entries, song, position, null, null);
+		playNow(entries, song, position, false);
+	}
+
+	protected void playNow(List<Entry> entries, Entry song, int position, boolean interrupt) {
+		playNow(entries, song, position, null, null, interrupt);
 	}
 
 	protected void playNow(final List<Entry> entries, final Entry song, final int position, final String playlistName, final String playlistId) {
+		playNow(entries, song, position, playlistName, playlistId, false);
+	}
+
+	protected void playNow(final List<Entry> entries, final Entry song, final int position, final String playlistName, final String playlistId, final boolean interrupt) {
 		new LoadingTask<Void>(context) {
 			@Override
 			protected Void doInBackground() throws Throwable {
-				playNowInTask(entries, song, position, playlistName, playlistId);
+				playNowInTask(entries, song, position, playlistName, playlistId, interrupt);
 				return null;
 			}
 
@@ -1767,18 +1881,97 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 			}
 		}.execute();
 	}
+
 	protected void playNowInTask(final List<Entry> entries, final Entry song, final int position) {
-		playNowInTask(entries, song, position, null, null);
+		playNowInTask(entries, song, position, false);
 	}
+
+	protected void playNowInTask(final List<Entry> entries, final Entry song, final int position, final boolean interrupt) {
+		playNowInTask(entries, song, position, null, null, interrupt);
+	}
+
 	protected void playNowInTask(final List<Entry> entries, final Entry song, final int position, final String playlistName, final String playlistId) {
+		playNowInTask(entries, song, position, playlistName, playlistId, false);
+	}
+
+	protected void playNowInTask(final List<Entry> entries, final Entry song, final int position, final String playlistName, final String playlistId, final boolean interrupt) {
 		DownloadService downloadService = getDownloadService();
 		if(downloadService == null) {
 			return;
 		}
 
-		downloadService.clear();
-		downloadService.download(entries, false, true, true, false, entries.indexOf(song), position);
+		if(!interrupt) downloadService.clear();
+		downloadService.download(entries, false, true, true, false, Math.max(downloadService.getCurrentPlayingIndex(), 0) + entries.indexOf(song), position);
 		downloadService.setSuggestedPlaylistName(playlistName, playlistId);
+	}
+
+	protected void deleteBookmarks() {
+		List<Entry> songs = getSelectedEntries();
+
+		final List<Entry> entriesWithBookmarks = new ArrayList<Entry>();
+
+		for (Entry song : songs) {
+			if (song.getBookmark() != null) entriesWithBookmarks.add(song);
+		}
+
+		if (entriesWithBookmarks.isEmpty()) return;
+
+		Util.confirmDialog(context, context.getResources().getString(R.string.bookmark_delete_multiple_title, entriesWithBookmarks.size()).toLowerCase(), "", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				new LoadingTask<Void>(context, false) {
+					Bookmark oldBookmark = null;
+					Entry entry = null;
+					int deletedBookmarks = 0;
+
+					@Override
+					protected Void doInBackground() throws Throwable {
+						MusicService musicService = MusicServiceFactory.getMusicService(context);
+
+						for (Entry e : entriesWithBookmarks) {
+							entry = e;
+							oldBookmark = e.getBookmark();
+							entry.setBookmark(null);
+
+							musicService.deleteBookmark(e, context, null);
+
+							deletedBookmarks++;
+
+							new UpdateHelper.EntryInstanceUpdater(e, DownloadService.METADATA_UPDATED_BOOKMARK) {
+								@Override
+								public void update(Entry found) {
+									found.setBookmark(null);
+								}
+							}.execute();
+
+						}
+						return null;
+					}
+
+					@Override
+					protected void done(Void result) {
+						Util.toast(context, context.getResources().getString(R.string.bookmark_deleted_multiple, deletedBookmarks, entriesWithBookmarks.size()));
+					}
+
+					@Override
+					protected void error(Throwable error) {
+						entry.setBookmark(oldBookmark);
+
+						String msg;
+						if (error instanceof OfflineException || error instanceof ServerTooOldException) {
+							msg = getErrorMessage(error);
+						} else {
+							msg = context.getResources().getString(R.string.bookmark_deleted_error, entry.getTitle()) + " " + getErrorMessage(error);
+						}
+
+						Util.toast(context, msg, false);
+
+						if (deletedBookmarks > 0)
+							Util.toast(context, context.getResources().getString(R.string.bookmark_deleted_multiple, deletedBookmarks, entriesWithBookmarks.size()));
+					}
+				}.execute();
+			}
+		});
 	}
 
 	protected void deleteBookmark(final MusicDirectory.Entry entry, final SectionAdapter adapter) {
@@ -1893,6 +2086,13 @@ public class SubsonicFragment extends Fragment implements SwipeRefreshLayout.OnR
 	protected void clearSelected() {
 		if(getCurrentAdapter() != null) {
 			getCurrentAdapter().clearSelected();
+		}
+	}
+	protected void selectAll() {
+		Log.e(TAG, "Trying to select all...");
+		if(getCurrentAdapter() != null) {
+			Log.e(TAG, "Trying to select all via getCurrentAdapter...");
+			getCurrentAdapter().selectAll();
 		}
 	}
 	protected List<Entry> getSelectedEntries() {

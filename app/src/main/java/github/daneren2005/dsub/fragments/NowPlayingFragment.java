@@ -1212,13 +1212,7 @@ public class NowPlayingFragment extends SubsonicFragment implements OnGestureLis
 	@Override
 	public void onItemClicked(UpdateView<DownloadFile> updateView, final DownloadFile item) {
 		warnIfStorageUnavailable();
-		new SilentBackgroundTask<Void>(context) {
-			@Override
-			protected Void doInBackground() throws Throwable {
-				getDownloadService().play(item);
-				return null;
-			}
-		}.execute();
+		playDownloadFile(item);
 	}
 
 	@Override

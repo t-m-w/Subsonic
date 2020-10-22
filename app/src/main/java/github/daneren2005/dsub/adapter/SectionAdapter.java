@@ -56,7 +56,6 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 	protected boolean singleSectionHeader;
 	protected OnItemClickedListener<T> onItemClickedListener;
 	protected List<T> selected = new ArrayList<>();
-	protected List<UpdateView> selectedViews = new ArrayList<>();
 	protected ActionMode currentActionMode;
 	protected boolean checkable = false;
 
@@ -110,11 +109,9 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 							if(updateView.isCheckable()) {
 								if (selected.contains(item)) {
 									selected.remove(item);
-									selectedViews.remove(updateView);
 									setChecked(updateView, false);
 								} else {
 									selected.add(item);
-									selectedViews.add(updateView);
 									setChecked(updateView, true);
 								}
 
@@ -179,7 +176,23 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 
 	@Override
 	public void onBindViewHolder(UpdateViewHolder holder, int position) {
+		onBindViewHolder(holder, position, new ArrayList());
+	}
+
+	@Override
+	public void onBindViewHolder(UpdateViewHolder holder, int position, List payloads) {
 		UpdateView updateView = holder.getUpdateView();
+
+		if(!payloads.isEmpty()) {
+			for (Object payload : payloads) {
+				if ("checked".equals(payload)) {
+					updateView.setChecked(true);
+				} else if ("unchecked".equals(payload)) {
+					updateView.setChecked(false);
+				}
+			}
+			return;
+		}
 
 		if(sections.size() == 1 && !singleSectionHeader) {
 			T item = sections.get(0).get(position);
@@ -358,9 +371,24 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 		}
 		selected.clear();
 
-		for(UpdateView updateView: selectedViews) {
-			updateView.setChecked(false);
+		notifyItemRangeChanged(0, getItemCount(), "unchecked");
+	}
+
+	public void selectAll() {
+		selected.clear();
+
+		if(sections.size() == 1 && !singleSectionHeader) {
+			selected.addAll(sections.get(0));
 		}
+		else {
+			for(List<T> section: sections) {
+				selected.addAll(section);
+			}
+		}
+
+		notifyItemRangeChanged(0, getItemCount(), "checked");
+
+		updateSelection();
 	}
 
 	public void moveItem(int from, int to) {
@@ -406,6 +434,24 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 	}
 	public void onCreateActionModeMenu(Menu menu, MenuInflater menuInflater) {}
 
+	private void updateSelection() {
+		ActionMode mode = currentActionMode;
+		if (selected.size() > 0 && mode != null) {
+			mode.setTitle(context.getResources().getString(R.string.select_album_n_selected, selected.size()));
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Util.getPreferences(context).getBoolean(Constants.PREFERENCES_KEY_COLOR_ACTION_BAR, true)) {
+				TypedValue typedValue = new TypedValue();
+				Resources.Theme theme = context.getTheme();
+				theme.resolveAttribute(R.attr.colorPrimaryDark, typedValue, true);
+				int colorPrimaryDark = typedValue.data;
+
+				Window window = ((SubsonicFragmentActivity) context).getWindow();
+				window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+				window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+				window.setStatusBarColor(colorPrimaryDark);
+			}
+		}
+	}
+
 	private void startActionMode(final UpdateView.UpdateViewHolder<T> holder) {
 		final UpdateView<T> updateView = holder.getUpdateView();
 		if (context instanceof SubsonicFragmentActivity && currentActionMode == null) {
@@ -417,24 +463,13 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 
 					T item = holder.getItem();
 					selected.add(item);
-					selectedViews.add(updateView);
 					setChecked(updateView, true);
 
 					onCreateActionModeMenu(menu, mode.getMenuInflater());
 					MenuUtil.hideMenuItems(context, menu, updateView);
 
-					mode.setTitle(context.getResources().getString(R.string.select_album_n_selected, selected.size()));
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Util.getPreferences(context).getBoolean(Constants.PREFERENCES_KEY_COLOR_ACTION_BAR, true)) {
-						TypedValue typedValue = new TypedValue();
-						Resources.Theme theme = context.getTheme();
-						theme.resolveAttribute(R.attr.colorPrimaryDark, typedValue, true);
-						int colorPrimaryDark = typedValue.data;
+					updateSelection();
 
-						Window window = ((SubsonicFragmentActivity) context).getWindow();
-						window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-						window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-						window.setStatusBarColor(colorPrimaryDark);
-					}
 					return true;
 				}
 
@@ -446,7 +481,9 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 				@Override
 				public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
 					if (fragmentActivity.onOptionsItemSelected(item)) {
-						currentActionMode.finish();
+						if (selected.isEmpty()) {
+							currentActionMode.finish();
+						}
 						return true;
 					} else {
 						return false;
@@ -456,11 +493,7 @@ public abstract class SectionAdapter<T> extends RecyclerView.Adapter<UpdateViewH
 				@Override
 				public void onDestroyActionMode(ActionMode mode) {
 					currentActionMode = null;
-					selected.clear();
-					for (UpdateView<T> updateView : selectedViews) {
-						updateView.setChecked(false);
-					}
-					selectedViews.clear();
+					clearSelected();
 
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Util.getPreferences(context).getBoolean(Constants.PREFERENCES_KEY_COLOR_ACTION_BAR, true)) {
 						Window window = ((SubsonicFragmentActivity) context).getWindow();

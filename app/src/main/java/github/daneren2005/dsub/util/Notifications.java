@@ -86,9 +86,11 @@ public final class Notifications {
 					.setMediaSession(remoteControlClient.getMediaSession().getSessionToken());
 
 			if (isSingle) {
-				mediaStyle.setShowActionsInCompactView(1);
+				mediaStyle.setShowActionsInCompactView(0, 1, 2); // rewind, play/pause, fast forward
+			} else if (shouldFastForward) {
+				mediaStyle.setShowActionsInCompactView(1, 2, 3); // rewind, play/pause, fast forward (previous=0, next=4)
 			} else {
-				mediaStyle.setShowActionsInCompactView(0, 2, 4);
+				mediaStyle.setShowActionsInCompactView(0, 2, 4); // previous, play/pause, next
 			}
 
 			String title = song.getTitle();
@@ -229,6 +231,7 @@ public final class Notifications {
 		int keyCode = 0;
 		switch (action) {
 			case "KEYCODE_MEDIA_PREVIOUS":
+				intent.setAction(DownloadService.CMD_PREVIOUS); // prevents overriding of previous/next track behavior for podcasts or long tracks
 				keyCode = KeyEvent.KEYCODE_MEDIA_PREVIOUS;
 				break;
 
@@ -245,6 +248,7 @@ public final class Notifications {
 				break;
 
 			case "KEYCODE_MEDIA_NEXT":
+				intent.setAction(DownloadService.CMD_NEXT); // prevents overriding of previous/next track behavior for podcasts or long tracks
 				keyCode = KeyEvent.KEYCODE_MEDIA_NEXT;
 				break;
 

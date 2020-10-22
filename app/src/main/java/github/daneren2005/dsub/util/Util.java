@@ -749,6 +749,9 @@ public final class Util {
 	public static void confirmDialog(Context context, int action, String subject, DialogInterface.OnClickListener onClick, DialogInterface.OnClickListener onCancel) {
 		Util.confirmDialog(context, context.getResources().getString(action).toLowerCase(), subject, onClick, onCancel);
 	}
+	public static void confirmDialog(Context context, String action, String subject, DialogInterface.OnClickListener onClick) {
+		Util.confirmDialog(context, action, subject, onClick, null);
+	}
 	public static void confirmDialog(Context context, String action, String subject, DialogInterface.OnClickListener onClick, DialogInterface.OnClickListener onCancel) {
 		new AlertDialog.Builder(context)
 			.setIcon(android.R.drawable.ic_dialog_alert)
@@ -1534,5 +1537,12 @@ public final class Util {
 		}
 
 		return random;
+	}
+
+	public static int getRewindInterval(Context context) {
+		return Integer.parseInt(getPreferences(context).getString(Constants.PREFERENCES_KEY_REWIND_INTERVAL, "10"))*1000;
+	}
+	public static int getFastForwardInterval(Context context) {
+		return Integer.parseInt(getPreferences(context).getString(Constants.PREFERENCES_KEY_FASTFORWARD_INTERVAL, "10"))*1000;
 	}
 }

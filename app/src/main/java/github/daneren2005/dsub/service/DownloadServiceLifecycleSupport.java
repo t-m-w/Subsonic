@@ -82,13 +82,14 @@ public class DownloadServiceLifecycleSupport {
 				@Override
 				public void run() {
 					String action = intent.getAction();
+					Log.e(TAG, "intentReceiver.onReceive: " + action);
 					Log.i(TAG, "intentReceiver.onReceive: " + action);
 					if (DownloadService.CMD_PLAY.equals(action)) {
 						downloadService.play();
 					} else if (DownloadService.CMD_NEXT.equals(action)) {
-						downloadService.next();
+						downloadService.nextTrack();
 					} else if (DownloadService.CMD_PREVIOUS.equals(action)) {
-						downloadService.previous();
+						downloadService.previousTrack();
 					} else if (DownloadService.CMD_TOGGLEPAUSE.equals(action)) {
 						downloadService.togglePlayPause();
 					} else if (DownloadService.CMD_PAUSE.equals(action)) {
@@ -183,6 +184,8 @@ public class DownloadServiceLifecycleSupport {
 	public void onStart(final Intent intent) {
 		if (intent != null) {
 			final String action = intent.getAction();
+			Log.e(TAG, "intentReceiver.onStart: " + action);
+
 
 			if(eventHandler == null) {
 				Util.sleepQuietly(100L);
@@ -238,9 +241,9 @@ public class DownloadServiceLifecycleSupport {
 					} else if(DownloadService.CMD_TOGGLEPAUSE.equals(action)) {
 						downloadService.togglePlayPause();
 					} else if(DownloadService.CMD_NEXT.equals(action)) {
-						downloadService.next();
+						downloadService.nextTrack();
 					} else if(DownloadService.CMD_PREVIOUS.equals(action)) {
-						downloadService.previous();
+						downloadService.previousTrack();
 					} else if(DownloadService.CANCEL_DOWNLOADS.equals(action)) {
 						downloadService.clearBackground();
 					} else if(intent.getExtras() != null) {

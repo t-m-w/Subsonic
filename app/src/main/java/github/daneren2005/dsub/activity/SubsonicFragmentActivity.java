@@ -305,7 +305,7 @@ public class SubsonicFragmentActivity extends SubsonicActivity implements Downlo
 							return null;
 						}
 
-						getDownloadService().previous();
+						getDownloadService().previousTrack();
 						return null;
 					}
 				}.execute();
@@ -345,7 +345,7 @@ public class SubsonicFragmentActivity extends SubsonicActivity implements Downlo
 							return null;
 						}
 
-						getDownloadService().next();
+						getDownloadService().nextTrack();
 						return null;
 					}
 				}.execute();

@@ -428,7 +428,7 @@ public class DownloadService extends Service {
 		download(Arrays.asList((MusicDirectory.Entry) station), false, true, false, false);
 	}
 	public synchronized void download(List<MusicDirectory.Entry> songs, boolean save, boolean autoplay, boolean playNext, boolean shuffle) {
-		download(songs, save, autoplay, playNext, shuffle, 0, 0);
+		download(songs, save, autoplay, playNext, shuffle, 0, -1);
 	}
 	public synchronized void download(List<MusicDirectory.Entry> songs, boolean save, boolean autoplay, boolean playNext, boolean shuffle, int start, int position) {
 		setShufflePlayEnabled(false);
@@ -1108,15 +1108,25 @@ public class DownloadService extends Service {
 	public synchronized void play(int index) {
 		play(index, true);
 	}
+	public synchronized void play(int index, int position) {
+		play(index, true, position);
+	}
 	public synchronized void play(DownloadFile downloadFile) {
-		play(downloadList.indexOf(downloadFile));
+		play(downloadList.indexOf(downloadFile), true);
+	}
+	public synchronized void play(DownloadFile downloadFile, int position) {
+		play(downloadList.indexOf(downloadFile), true, position);
 	}
 	private synchronized void play(int index, boolean start) {
-		play(index, start, 0);
+		play(index, start, -1);
 	}
 	private synchronized void play(int index, boolean start, int position) {
 		int size = this.size();
+
+		checkAddBookmark(true);
+
 		cachedPosition = 0;
+
 		if (index < 0 || index >= size) {
 			reset();
 			if(index >= size && size != 0) {
@@ -1127,6 +1137,11 @@ public class DownloadService extends Service {
 			}
 			lifecycleSupport.serializeDownloadQueue();
 		} else {
+			if (position == -1) {
+				Bookmark mark = downloadList.get(index).getSong().getBookmark();
+				if (mark != null) position = Math.max(0, mark.getPosition() - Util.getRewindInterval(this));
+				else position = 0;
+			}
 			if(nextPlayingTask != null) {
 				nextPlayingTask.cancel();
 				nextPlayingTask = null;
@@ -1172,8 +1187,13 @@ public class DownloadService extends Service {
 			// Next time the cachedPosition is updated, use that as position 0
 			subtractNextPosition = System.currentTimeMillis();
 		}
+		subtractNextPosition -= nextMediaPlayer.getCurrentPosition();
 		MediaPlayer tmp = mediaPlayer;
 		mediaPlayer = nextMediaPlayer;
+		if(positionCache != null) {
+			positionCache.stop();
+			positionCache = null;
+		}
 		nextMediaPlayer = tmp;
 		setCurrentPlaying(nextPlaying, true);
 		setPlayerState(PlayerState.STARTED);
@@ -1230,10 +1250,10 @@ public class DownloadService extends Service {
 		}
 	}
 	public synchronized int rewind() {
-		return seekToWrapper(Integer.parseInt(Util.getPreferences(this).getString(Constants.PREFERENCES_KEY_REWIND_INTERVAL, "10"))*-1000);
+		return seekToWrapper(Util.getRewindInterval(this)*-1);
 	}
 	public synchronized int fastForward() {
-		return seekToWrapper(Integer.parseInt(Util.getPreferences(this).getString(Constants.PREFERENCES_KEY_FASTFORWARD_INTERVAL, "10"))*1000);
+		return seekToWrapper(Util.getFastForwardInterval(this));
 	}
 	protected int seekToWrapper(int difference) {
 		int msPlayed = Math.max(0, getPlayerPosition());
@@ -1249,6 +1269,29 @@ public class DownloadService extends Service {
 		seekTo(seekTo);
 
 		return seekTo;
+	}
+
+	public synchronized void previousTrack() {
+		int index = getCurrentPlayingIndex();
+		if (index == -1) {
+			return;
+		}
+
+		if(playerState == PREPARING || playerState == PREPARED) {
+			return;
+		}
+
+		// Restart song if played more than five seconds.
+		if (getPlayerPosition() > 5000 || (index == 0 && getRepeatMode() != RepeatMode.ALL)) {
+			seekTo(0);
+		} else {
+			if(index == 0) {
+				index = size();
+			}
+
+			play(index - 1, playerState != PAUSED && playerState != STOPPED && playerState != IDLE);
+		}
+
 	}
 
 	public synchronized void previous() {
@@ -1274,6 +1317,40 @@ public class DownloadService extends Service {
 			}
 
 			play(index - 1, playerState != PAUSED && playerState != STOPPED && playerState != IDLE);
+		}
+	}
+
+	public synchronized void nextTrack() {
+		if(playerState == PREPARING || playerState == PREPARED) {
+			return;
+		}
+
+		// Delete podcast if fully listened to
+		int position = getPlayerPosition();
+		int duration = getPlayerDuration();
+		boolean cutoff;
+		cutoff = isPastCutoff(position, duration);
+
+		if(currentPlaying != null && currentPlaying.getSong() instanceof PodcastEpisode && !currentPlaying.isSaved()) {
+			if(cutoff) {
+				toDelete.add(currentPlaying);
+			}
+		}
+		if(cutoff) {
+			clearCurrentBookmark(true);
+		}
+		if(currentPlaying != null) {
+			scrobbler.conditionalScrobble(this, currentPlaying, position, duration, cutoff);
+		}
+
+		int index = getCurrentPlayingIndex();
+		int nextPlayingIndex = getNextPlayingIndex();
+		// Make sure to actually go to next when repeat song is on
+		if(index == nextPlayingIndex) {
+			nextPlayingIndex++;
+		}
+		if (index != -1 && nextPlayingIndex < size()) {
+			play(nextPlayingIndex, playerState != PAUSED && playerState != STOPPED && playerState != IDLE);
 		}
 	}
 
@@ -2062,6 +2139,17 @@ public class DownloadService extends Service {
 						if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && (playerState == PlayerState.STARTED || playerState == PlayerState.PAUSED)) {
 							mediaPlayer.setNextMediaPlayer(nextMediaPlayer);
 							nextSetup = true;
+						}
+
+						// Resume from bookmark for next track, if it has one.
+						// Subtract the rewind interval, to allow for some context.
+						// TODO: Allow user to choose via a preference whether or not bookmarks should be rewound.
+						Bookmark mark = downloadFile.getSong().getBookmark();
+						int position = 0;
+						if (mark != null) position = Math.max(mark.getPosition() - Util.getRewindInterval(DownloadService.this), 0);
+
+						if (position != 0) {
+							nextMediaPlayer.seekTo(position);
 						}
 
 						applyReplayGain(nextMediaPlayer, downloadFile);

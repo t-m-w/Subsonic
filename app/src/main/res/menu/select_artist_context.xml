@@ -49,4 +49,8 @@
 				android:title="@string/common.star"/>
 		</group>
 	</group>
+
+	<item
+		android:id="@+id/menu_select_all"
+		android:title="@string/menu.select_all"/>
 </menu>

@@ -24,4 +24,14 @@
 	<item
 		android:id="@+id/menu_star"
 		android:title="@string/common.star"/>
+
+	<group android:id="@+id/server_1.9">
+		<item
+			android:id="@+id/bookmark_menu_delete"
+			android:title="@string/bookmark.delete"/>
+	</group>
+
+	<item
+		android:id="@+id/menu_select_all"
+		android:title="@string/menu.select_all"/>
 </menu>
