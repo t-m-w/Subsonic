@@ -18,6 +18,7 @@
  */
 package github.daneren2005.dsub.activity;
 
+import android.Manifest;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -184,6 +185,17 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 		if (ContextCompat.checkSelfPermission(this, permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 			ActivityCompat.requestPermissions(this, new String[]{ permission.WRITE_EXTERNAL_STORAGE }, PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
 		}
+
+		SharedPreferences prefs = Util.getPreferences(this);
+		int instance = prefs.getInt(Constants.PREFERENCES_KEY_SERVER_INSTANCE, 1);
+		String expectedSSID = prefs.getString(Constants.PREFERENCES_KEY_SERVER_LOCAL_NETWORK_SSID + instance, "");
+		if(!expectedSSID.isEmpty()) {
+			String currentSSID = Util.getSSID(this);
+
+			if(currentSSID == "<unknown ssid>" && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+				ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, SubsonicActivity.PERMISSIONS_REQUEST_LOCATION);
+			}
+		}
 	}
 
 	@Override
@@ -204,7 +216,6 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 
 				} else {
 					Util.toast(this, R.string.permission_location_failed);
-					finish();
 				}
 			}
 		}
@@ -296,6 +307,8 @@ public class SubsonicActivity extends AppCompatActivity implements OnItemSelecte
 	public void setContentView(int viewId) {
 		if(isTv()) {
 			super.setContentView(R.layout.static_drawer_activity);
+		} else if(Util.getPreferences(this).getBoolean(Constants.PREFERENCES_KEY_FULL_SCREEN, false)) {
+			super.setContentView(R.layout.abstract_fullscreen_activity);
 		} else {
 			super.setContentView(R.layout.abstract_activity);
 		}
